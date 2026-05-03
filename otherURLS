@@ -1,0 +1,228 @@
+#!/usr/bin/env python3
+
+import asyncio
+import aiohttp
+import json
+import time
+import re
+import argparse
+from urllib.parse import quote
+
+# ───────────── CONFIG ─────────────
+CONCURRENCY = 20
+TIMEOUT = 25
+
+BLACKLIST = re.compile(r"\.(ico|svg|woff|ttf|png|jpg|jpeg|gif|css)$", re.I)
+
+PROXIES = [
+    lambda u: f"https://corsproxy.io/?url={quote(u)}",
+    lambda u: f"https://cors.eu.org/{u}",
+    lambda u: f"https://api.allorigins.win/raw?url={quote(u)}",
+    lambda u: f"https://api.codetabs.com/v1/proxy?quest={quote(u)}",
+    lambda u: f"https://thingproxy.freeboard.io/fetch/{u}",
+]
+
+# ───────────── ANEW WRITER ─────────────
+class AnewWriter:
+    def __init__(self, file):
+        self.file = file
+        self.seen = set()
+        self.count = 0
+
+        try:
+            with open(file) as f:
+                for line in f:
+                    self.seen.add(line.strip())
+        except:
+            pass
+
+    def write(self, url):
+        if url in self.seen:
+            return
+        self.seen.add(url)
+        self.count += 1
+        with open(self.file, "a") as f:
+            f.write(url + "\n")
+
+# ───────────── SMART FETCH ─────────────
+async def fetch(session, url):
+    try:
+        async with session.get(url, timeout=TIMEOUT) as r:
+            if r.status == 200:
+                return await r.text()
+
+            if r.status in [403, 429, 503]:
+                print(f"[!] Blocked {r.status} → proxies")
+
+    except:
+        pass
+
+    # fallback to proxies
+    for proxy in PROXIES:
+        try:
+            purl = proxy(url)
+            async with session.get(purl, timeout=TIMEOUT) as r:
+                if r.status == 200:
+                    return await r.text()
+        except:
+            continue
+
+    return None
+
+# ───────────── COMMONCRAWL ─────────────
+async def fetch_cc(domain, session, writer):
+    print(f"[CC] Start {domain}")
+
+    idx_data = await fetch(session, "https://index.commoncrawl.org/collinfo.json")
+    if not idx_data:
+        print("[CC] Failed to get indexes")
+        return
+
+    indexes = [e["id"] for e in json.loads(idx_data) if "id" in e]
+
+    sem = asyncio.Semaphore(CONCURRENCY)
+    total = 0
+
+    async def worker(idx):
+        nonlocal total
+        async with sem:
+            print(f"[CC] {idx}")
+
+            url = f"https://index.commoncrawl.org/{idx}?url=*.{domain}/*&output=json&fl=url&matchType=domain"
+            data = await fetch(session, url)
+            if not data:
+                return
+
+            count = 0
+            for line in data.splitlines():
+                try:
+                    u = json.loads(line).get("url")
+                    if u and not BLACKLIST.search(u):
+                        writer.write(u)
+                        count += 1
+                except:
+                    continue
+
+            total += count
+
+    await asyncio.gather(*[worker(i) for i in indexes])
+
+    print(f"[CC] Done ({total})")
+
+# ───────────── WAYBACK ─────────────
+async def fetch_wayback(domain, session, writer):
+    print(f"[WAYBACK] Start {domain}")
+
+    url = (
+        "https://web.archive.org/cdx/search/cdx?"
+        f"url={quote(domain)}/*&collapse=urlkey&output=text&fl=original"
+    )
+
+    data = await fetch(session, url)
+    if not data:
+        print("[WAYBACK] Failed")
+        return
+
+    count = 0
+    for line in data.splitlines():
+        if line and not BLACKLIST.search(line):
+            writer.write(line)
+            count += 1
+
+    print(f"[WAYBACK] Done ({count})")
+
+# ───────────── OTX ─────────────
+async def fetch_otx(domain, session, writer):
+    print(f"[OTX] Start {domain}")
+
+    sem = asyncio.Semaphore(CONCURRENCY)
+    total = 0
+
+    async def worker(i):
+        nonlocal total
+        async with sem:
+            print(f"[OTX] page {i}")
+
+            url = f"https://otx.alienvault.com/api/v1/indicators/domain/{domain}/url_list?page={i}"
+            data = await fetch(session, url)
+            if not data:
+                return
+
+            try:
+                js = json.loads(data)
+            except:
+                return
+
+            count = 0
+            for e in js.get("url_list", []):
+                u = e.get("url")
+                if u and not BLACKLIST.search(u):
+                    writer.write(u)
+                    count += 1
+
+            total += count
+
+    await asyncio.gather(*[worker(i) for i in range(1, 101)])
+
+    print(f"[OTX] Done ({total})")
+
+# ───────────── URLSCAN ─────────────
+async def fetch_urlscan(domain, session, writer):
+    print(f"[URLSCAN] Start {domain}")
+
+    url = f"https://urlscan.io/api/v1/search/?q=domain:{domain}"
+    data = await fetch(session, url)
+    if not data:
+        print("[URLSCAN] Failed")
+        return
+
+    try:
+        js = json.loads(data)
+    except:
+        print("[URLSCAN] Parse error")
+        return
+
+    count = 0
+    for r in js.get("results", []):
+        u = r.get("page", {}).get("url")
+        if u and domain in u and not BLACKLIST.search(u):
+            writer.write(u)
+            count += 1
+
+    print(f"[URLSCAN] Done ({count})")
+
+# ───────────── MAIN ─────────────
+async def process_domain(domain, session, writer):
+    print(f"\n[+] Processing: {domain}")
+
+    await asyncio.gather(
+        fetch_wayback(domain, session, writer),
+        fetch_otx(domain, session, writer),
+        fetch_urlscan(domain, session, writer),
+        fetch_cc(domain, session, writer),
+    )
+
+    print(f"[✓] Finished {domain} | Total so far: {writer.count}")
+
+async def main():
+    parser = argparse.ArgumentParser()
+    parser.add_argument("-i", required=True)
+    parser.add_argument("-o", required=True)
+    args = parser.parse_args()
+
+    writer = AnewWriter(args.o)
+
+    with open(args.i) as f:
+        domains = [l.strip() for l in f if l.strip()]
+
+    timeout = aiohttp.ClientTimeout(total=TIMEOUT)
+
+    async with aiohttp.ClientSession(timeout=timeout) as session:
+        await asyncio.gather(
+            *[process_domain(d, session, writer) for d in domains]
+        )
+
+    print("\n[+] Done.")
+
+if __name__ == "__main__":
+    asyncio.run(main())
