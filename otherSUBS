@@ -1,0 +1,179 @@
+#!/usr/bin/env python3
+
+import argparse
+import requests
+import re
+import sys
+import threading
+import time
+from concurrent.futures import ThreadPoolExecutor
+
+lock = threading.Lock()
+seen = set()
+
+# --- CONFIG ---
+MAX_THREADS = 10
+REQUEST_DELAY = 0.5   # seconds between requests per thread
+RETRIES = 2
+
+# --- HELPERS ---
+def clean(domain):
+    return domain.replace("*.", "").strip()
+
+def safe_request(url):
+    for i in range(RETRIES):
+        try:
+            r = requests.get(url, timeout=10)
+            time.sleep(REQUEST_DELAY)
+            return r
+        except:
+            time.sleep(1 * (i + 1))
+    return None
+
+def output(domain, outfile):
+    with lock:
+        if domain not in seen:
+            seen.add(domain)
+            print(domain)
+            if outfile:
+                outfile.write(domain + "\n")
+                outfile.flush()
+
+# --- SOURCES ---
+def crtsh(domain, outfile):
+    r = safe_request(f"https://crt.sh/?q=%25.{domain}&output=json")
+    if not r:
+        return
+    try:
+        data = r.json()
+        for entry in data:
+            for d in entry.get("name_value", "").split("\n"):
+                output(clean(d), outfile)
+    except:
+        pass
+
+def certspotter(domain, outfile):
+    r = safe_request(f"https://api.certspotter.com/v1/issuances?domain={domain}&include_subdomains=true&expand=dns_names")
+    if not r:
+        return
+    try:
+        for entry in r.json():
+            for d in entry.get("dns_names", []):
+                output(clean(d), outfile)
+    except:
+        pass
+
+def hackertarget(domain, outfile):
+    r = safe_request(f"https://api.hackertarget.com/hostsearch/?q={domain}")
+    if not r:
+        return
+    for line in r.text.splitlines():
+        output(line.split(",")[0], outfile)
+
+def alienvault(domain, outfile):
+    r = safe_request(f"https://otx.alienvault.com/api/v1/indicators/domain/{domain}/url_list?limit=100&page=1")
+    if not r:
+        return
+    matches = re.findall(r'"hostname":\s*"([^"]+)', r.text)
+    for m in matches:
+        output(clean(m), outfile)
+
+def wayback(domain, outfile):
+    r = safe_request(f"http://web.archive.org/cdx/search/cdx?url=*.{domain}/*&output=text&fl=original&collapse=urlkey")
+    if not r:
+        return
+    for line in r.text.splitlines():
+        d = re.sub(r"https?://", "", line).split("/")[0]
+        output(clean(d), outfile)
+
+def urlscan(domain, outfile):
+    r = safe_request(f"https://urlscan.io/api/v1/search/?q=domain:{domain}")
+    if not r:
+        return
+    try:
+        data = r.json()
+        for res in data.get("results", []):
+            if "page" in res and res["page"].get("domain"):
+                output(clean(res["page"]["domain"]), outfile)
+            if "task" in res and res["task"].get("domain"):
+                output(clean(res["task"]["domain"]), outfile)
+    except:
+        pass
+
+def subdomain_center(domain, outfile):
+    r = safe_request(f"https://api.subdomain.center/?domain={domain}")
+    if not r:
+        return
+    try:
+        for d in r.json():
+            output(clean(d), outfile)
+    except:
+        pass
+
+def rapiddns(domain, outfile):
+    r = safe_request(f"https://rapiddns.io/subdomain/{domain}?full=1")
+    if not r:
+        return
+    matches = re.findall(rf"([a-zA-Z0-9-]+\.)+{domain}", r.text)
+    for m in matches:
+        output(m, outfile)
+
+def dnsrepo(domain, outfile):
+    r = safe_request(f"https://dnsrepo.noc.org/?domain={domain}")
+    if not r:
+        return
+    matches = re.findall(rf"([a-zA-Z0-9-]+\.)+{domain}", r.text)
+    for m in matches:
+        output(m, outfile)
+
+# --- MAIN ---
+def run_domain(domain, outfile):
+    print(f"[+] {domain}")
+    funcs = [
+        crtsh,
+        certspotter,
+        hackertarget,
+        alienvault,
+        wayback,
+        urlscan,
+        subdomain_center,
+        rapiddns,
+        dnsrepo
+    ]
+
+    with ThreadPoolExecutor(max_workers=MAX_THREADS) as executor:
+        for f in funcs:
+            executor.submit(f, domain, outfile)
+
+def main():
+    parser = argparse.ArgumentParser(description="Threaded Subdomain Enumerator")
+    parser.add_argument("-d", help="Single domain")
+    parser.add_argument("-l", help="File with domains")
+    parser.add_argument("-o", help="Output file")
+
+    args = parser.parse_args()
+
+    if not args.d and not args.l:
+        parser.print_help()
+        sys.exit()
+
+    domains = set()
+
+    if args.d:
+        domains.add(args.d)
+
+    if args.l:
+        with open(args.l) as f:
+            domains.update([x.strip() for x in f if x.strip()])
+
+    outfile = open(args.o, "a") if args.o else None
+
+    with ThreadPoolExecutor(max_workers=MAX_THREADS) as executor:
+        for d in domains:
+            executor.submit(run_domain, d, outfile)
+
+    if outfile:
+        outfile.close()
+
+if __name__ == "__main__":
+    main()
