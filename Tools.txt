@@ -1,0 +1,180 @@
+sudo apt update && sudo apt upgrade -y
+sudo apt install net-tools iputils-ping nano neovim inetutils-traceroute traceroute speedtest-cli -y
+sudo apt install sqlmap pipx golang locate plocate python3-pip dnsutils man-db btop ftp openssh-server -y
+sudo apt install -y build-essential cmake libssl-dev pipx libreadline-dev zlib1g-dev subversion pipx rar unrar rarcrack
+sudo apt install -y ruby-full curl zsh zsh-autosuggestions git python3 wget zip unzip tar snap snapd apache2 xdotool jq tree
+sudo apt install python3-venv ldap-utils rush npm whois dos2unix neofetch python-is-python3 zstd default-jre default-jdk -y
+sudo apt install -y libnspr4 libnss3 libatk1.0-0 libatk-bridge2.0-0 libcups2 libdrm2 libxkbcommon0 libxcomposite1 libxdamage1 libxfixes3 libxrandr2 libgbm1 libasound2 libpangocairo-1.0-0 libpango-1.0-0 libcairo2 libatspi2.0-0 libgtk-3-0
+sudo python3 -m venv /root/venv	
+sudo apt install nmap p7zip-full libpcap-dev -y
+sudo apt install tmux bash-completion -y
+sudo apt install sublist3r fierce -y
+sudo apt install altdns -y
+sudo apt install wafw00f dirsearch -y
+sudo apt install ffuf -y
+sudo apt install hashcat -y
+sudo apt install nikto -y
+sudo apt install masscan -y
+sudo apt install gobuster -y
+sudo apt install exiftool -y
+sudo apt install hydra -y
+sudo apt install ruby-rubygems -y
+sudo apt install ruby-dev -y
+sudo apt install libcurl4-openssl-dev libxml2-dev -y
+sudo gem install wpscan
+sudo apt-get install apt-transport-https ca-certificates gnupg curl -y
+sudo apt update && sudo apt install -y zsh zsh-autosuggestions && sudo chsh -s $(which zsh) && cat > ~/.zshrc << 'EOF'
+source /usr/share/zsh-autosuggestions/zsh-autosuggestions.zsh
+autoload -Uz colors && colors
+export LS_COLORS="$LS_COLORS:di=34"
+alias ls="ls --color=auto"
+PROMPT="%F{red}%n%f %~ %F{green}#%f "
+EOF
+sudo apt install nodejs npm -y
+sudo npm install ua-parser-js
+sudo npm install puppeteer
+sudo curl -s "https://raw.githubusercontent.com/liamg/scout/master/scripts/install.sh" | bash
+npx puppeteer browsers install chrome
+sudo echo "sudo apt update && sudo apt upgrade -y && sudo apt dist-upgrade -y && sudo apt autoremove -y && sudo apt clean && sudo apt autoclean && sudo updatedb" > /usr/local/bin/updateall && sudo chmod +x /usr/local/bin/updateall
+sudo updateall
+#curl https://packages.cloud.google.com/apt/doc/apt-key.gpg | sudo gpg --dearmor -o /usr/share/keyrings/cloud.google.gpg
+#echo "deb [signed-by=/usr/share/keyrings/cloud.google.gpg] https://packages.cloud.google.com/apt cloud-sdk main" | sudo tee -a /etc/apt/sources.list.d/google-cloud-sdk.list
+#sudo apt-get update -y && sudo apt-get install google-cloud-cli -y
+#snap install searchsploit
+#snap install metasploit-framework
+go install github.com/lc/gau/v2/cmd/gau@latest
+go install -v github.com/tomnomnom/gf@latest
+go install github.com/tomnomnom/qsreplace@latest
+go install github.com/ncruces/zenity@latest
+go install -v github.com/projectdiscovery/shuffledns/cmd/shuffledns@latest
+go install -v github.com/projectdiscovery/chaos-client/cmd/chaos@latest
+go install github.com/projectdiscovery/asnmap/cmd/asnmap@latest
+go install github.com/tomnomnom/waybackurls@latest
+go install -v github.com/projectdiscovery/httpx/cmd/httpx@latest
+go install github.com/bitquark/shortscan/cmd/shortscan@latest
+go install -v github.com/projectdiscovery/subfinder/v2/cmd/subfinder@latest
+	#$CONFIG/subfinder/provider-config.yaml
+go install -v github.com/owasp-amass/amass/v4/...@master
+go install -v github.com/tomnomnom/assetfinder@latest
+go install github.com/tomnomnom/meg@latest
+go install github.com/tomnomnom/httprobe@latest
+go install -v github.com/tomnomnom/anew@latest
+go install -v github.com/rverton/webanalyze/cmd/webanalyze@latest
+go install -v github.com/PentestPad/subzy@latest
+go install github.com/detectify/page-fetch@latest
+go install github.com/hakluke/hakip2host@latest
+go install -v github.com/ethicalhackingplayground/bxss/v2/cmd/bxss@latest
+go install github.com/haccer/subjack@latest
+go install github.com/ImAyrix/cut-cdn@latest
+go install github.com/gwen001/github-subdomains@latest
+go install -v github.com/projectdiscovery/nuclei/v3/cmd/nuclei@latest
+go install github.com/Ice3man543/SubOver@latest
+go install -v github.com/projectdiscovery/naabu/v2/cmd/naabu@latest
+go install github.com/jaeles-project/gospider@latest
+go install github.com/Chocapikk/wpprobe@latest
+go install github.com/projectdiscovery/katana/cmd/katana@latest
+go install github.com/hakluke/hakrawler@latest
+go install github.com/koenrh/s3enum@latest
+go install github.com/projectdiscovery/tlsx/cmd/tlsx@latest
+go install github.com/d3mondev/puredns/v2@latest
+go install -v github.com/lc/subjs@latest
+go install github.com/utkusen/socialhunter@latest
+go install github.com/003random/getJS/v2@latest
+go install -v github.com/projectdiscovery/dnsx/cmd/dnsx@latest
+go install github.com/ferreiraklet/airixss@latest
+go install -v github.com/securebinary/firebaseExploiter@latest
+go install -v github.com/projectdiscovery/uncover/cmd/uncover@latest
+	#$CONFIG/uncover/provider-config.yaml
+go install github.com/Brosck/mantra@latest
+go install github.com/tomnomnom/unfurl@latest
+go install github.com/dwisiswant0/go-dork@latest
+go install github.com/denandz/sourcemapper@latest
+go install -v github.com/projectdiscovery/interactsh/cmd/interactsh-client@latest
+go install github.com/BishopFox/jsluice/cmd/jsluice@latest
+go install -v github.com/projectdiscovery/notify/cmd/notify@latest
+go install -v github.com/projectdiscovery/mapcidr/cmd/mapcidr@latest
+go install github.com/cgboal/sonarsearch/cmd/crobat@latest
+go install -v github.com/sa7mon/s3scanner@latest
+go install github.com/hahwul/dalfox/v2@latest
+go install github.com/Emoe/kxss@latest
+go install github.com/j3ssie/cdnstrip@latest
+cd ~/tools && git clone https://github.com/ameenmaali/urldedupe.git && cd urldedupe && cmake CMakeLists.txt && make && sudo cp urldedupe /usr/local/bin/ && sudo chmod +x /usr/local/bin/* && cd
+wget https://github.com/assetnote/kiterunner/releases/download/v1.0.2/kiterunner_1.0.2_linux_amd64.tar.gz && gunzip kiterunner_1.0.2_linux_amd64.tar.gz && tar -xvf kiterunner_1.0.2_linux_amd64.tar && sudo mv kr /usr/local/bin && sudo chmod +x /usr/local/bin/* && rm kiterunner_1.0.2_linux_amd64.tar
+sudo cp ~/go/bin/* /usr/local/bin && sudo chmod +x /usr/local/bin/*
+updateall
+#source ~/venv/bin/activate
+#sudo chown -R $USER:$USER ~/venv
+mkdir ~/tools && cd ~/tools
+pip3 install git+https://github.com/xnl-h4ck3r/waymore.git --break-system-packages
+pip3 install --upgrade waymore --break-system-packages
+pip3 install censys --break-system-packages
+pip3 install arjun --break-system-packages
+pip3 install lfimap --break-system-packages
+pip3 install -U --user shodan --break-system-packages
+pip3 install dnspython --break-system-packages
+pip3 install tldextract==2.2.1 --break-system-packages
+pip3 install clairvoyance --break-system-packages
+pip3 install git-dumper --break-system-packages
+python3 -m pip install awscli --break-system-packages
+python3 -m pip install --upgrade awscli --break-system-packages
+pipx install git+https://github.com/EnableSecurity/wafw00f.git
+pipx install bbot
+pipx install uro
+sudo cp ~/.local/share/pipx/venvs/uro/bin/uro /usr/local/bin/
+sudo cp ~/.local/share/pipx/venvs/wafw00f/bin/wafw00f /usr/local/bin/
+sudo cp ~/.local/share/pipx/venvs/bbot/bin/bbot /usr/local/bin/
+wget https://github.com/Findomain/Findomain/releases/download/9.0.4/findomain-linux.zip && unzip findomain-linux.zip && rm findomain-linux.zip && sudo mv findomain /usr/local/bin && sudo chmod +x /usr/local/bin/findomain
+sudo cp -r ~/.local/bin/* /usr/local/bin && sudo chmod +x /usr/local/bin/*
+mkdir ~/tools && cd ~/tools
+git clone https://github.com/rbsec/dnscan.git 
+git clone https://github.com/lanmaster53/recon-ng
+git clone https://github.com/Raghavd3v/CRLFsuite.git
+git clone https://github.com/nsonaniya2010/SubDomainizer.git
+git clone https://github.com/devanshbatham/paramspider
+git clone https://github.com/defparam/smuggler.git
+git clone https://github.com/gotr00t0day/spyhunt.git
+git clone https://github.com/spyboy-productions/CloakQuest3r.git
+git clone https://github.com/bing0o/SubEnum.git
+git clone https://github.com/blechschmidt/massdns.git && cd massdns && make && sudo cp bin/massdns /usr/local/bin/ && cd ..
+git clone https://github.com/assetnote/kiterunner.git
+git clone https://github.com/dwisiswant0/cf-check
+git clone https://github.com/dolevf/graphw00f.git
+git clone https://github.com/christophetd/CloudFlair.git
+git clone https://github.com/andresriancho/enumerate-iam.git
+git clone https://github.com/devploit/nomore403
+git clone https://github.com/r0075h3ll/Oralyzer.git
+git clone https://github.com/GerbenJavado/LinkFinder.git
+git clone https://github.com/Zierax/Grafana-Final-Scanner.git
+git clone https://github.com/epinna/tplmap
+git clone https://github.com/ticarpi/jwt_tool
+git clone https://github.com/initstring/cloud_enum.git
+git clone https://github.com/lijiejie/ds_store_exp.git
+git clone https://github.com/nahamsec/lazys3.git
+git clone https://github.com/r0oth3x49/ghauri.git
+git clone https://github.com/SpiderLabs/HostHunter
+git clone https://github.com/fdzdev/DMARC-SPF-Checker.git
+git clone https://github.com/m4ll0k/SecretFinder.git
+git clone https://github.com/coffinxp/loxs.git
+git clone https://github.com/s0md3v/Corsy.git
+git clone https://github.com/drwetter/testssl.sh.git
+git clone https://github.com/brendan-rius/c-jwt-cracker.git #make
+git clone https://github.com/s0md3v/XSStrike.git
+git clone https://github.com/capture0x/XSS-LOADER/
+git clone https://github.com/DanMcInerney/xsscrapy.git
+git clone https://github.com/chenjj/CORScanner.git
+git clone https://github.com/doosec101/swagger_scanner.git
+git clone https://github.com/codingo/NoSQLMap.git
+sudo cp ~/.local/bin/* /usr/local/bin
+sudo chmod +x /usr/local/bin
+
+git clone https://github.com/coffinxp/gFpattren.git	&& mv gFpattren .gf && mv .gf ~/.gf
+# wordlists:-
+wget https://github.com/brannondorsey/naive-hashcat/releases/download/data/rockyou.txt
+wget -c https://github.com/danielmiessler/SecLists/archive/master.zip -O SecList.zip && unzip SecList.zip && rm -f SecList.zip && mv SecLists-master seclists
+wget https://wordlists-cdn.assetnote.io/data/kiterunner/routes-large.kite.tar.gz && gunzip routes-large.kite.tar.gz && tar -xvf routes-large.kite.tar && mv routes-large.kite ~/wordlists && rm routes-large.kite.tar
+wget https://wordlists-cdn.assetnote.io/data/kiterunner/swagger-wordlist.txt
+wget https://wordlists-cdn.assetnote.io/data/manual/best-dns-wordlist.txt
+https://github.com/six2dez/resolvers_reconftw/		#resolvers
+git clone https://github.com/six2dez/OneListForAll.git
+https://github.com/infosec-au/altdns/blob/master/words.txt
+https://github.com/koenrh/s3enum/blob/main/examples/	#for s3enum
