@@ -266,7 +266,7 @@ cat urls-* | anew | uro | tee -a urlss && grep -Ev '\.(png|jpeg|woff2|svg|css)(\
 
 #clean for alien subs urls
 --------------------------
-awk -F/ 'NR==FNR{domains[$1]; next} {host=$3; sub(/:.*/,"",host); matched=0; for(d in domains) if(host==d || host ~ ("\\."d"$")) {matched=1; break} if(matched) print > "urls_allowed.txt"; else print > "urls_rejected.txt"}' domains urls && mv urls done && mv urls_allowed.txt urls
+awk -F/ 'NR==FNR{domains[$1]; next} {host=$3; sub(/:.*/,"",host); matched=0; for(d in domains) if(host==d || host ~ ("\\."d"$")) {matched=1; break} if(matched) print > "urls_allowed.txt"; else print > "urls_rejected.txt"}' wildcards urls && mv urls done && mv urls_allowed.txt urls
 cat urls | grep "=eyJ" | sort -u >> eyJ
 cat urls | grep -iE 'admin|internal|dashboard' > admin
 grep -Eo '[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}' urls | sort -u > emails
