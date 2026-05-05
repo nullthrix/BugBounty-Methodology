@@ -1,51 +1,64 @@
 Recon:-
 -------
-# crunchbase.com
-amass intel -org "Tesla"
-amass intel -active -asn 39416
-amass intel -active -cidr 159.69.129.82/32		#from ping or dig
-# whois slack.com       >> to get the registrant email address who registered the domain.
-# arin.net/reference/research/whowas/   if whois isn't giving results.
-# whoxy.com:email addr:registrant email addr >> to find all the domains registered with it.
-# employees linkedin accounts >> but time consuming.
+- crunchbase.com
+- amass intel -org "Tesla"
+- amass intel -active -asn 39416
+- amass intel -active -cidr 159.69.129.82/32		#from ping or dig
+- whois slack.com       >> to get the registrant email address who registered the domain.
+- arin.net/reference/research/whowas/   if whois isn't giving results.
+- whoxy.com:email addr:registrant email addr >> to find all the domains registered with it.
+- employees linkedin accounts >> but time consuming.
 - hunter.io to find emails: admin@target.com
-https://aleph.occrp.org/
-https://grep.app/
+- https://aleph.occrp.org/
+- https://grep.app/
 
-hurricane electric
+## hurricane electric
 https://bgp.he.net/		>	open ASNs		> 	look fore prefix v4 to gather ip ranges
 
-github search:
+## github search:
 gitdorks domain.com
 
-webanalyze -host https://www.google.com -crawl 2
+## webanalyze -host https://www.google.com -crawl 2
 
-get emails
+## get emails
 https://anymailfinder.com/
 ......@dropbox.com
 
 https://github.com/search?q=%22nasa.gov%22+password&type=code
 https://github.com/search?q=%22%22+password&type=code
 
-burpsuite plugins:-
+---------------------------------------------------------------------------------------------------------------------------------------------------
+
+burpsuite_plugins:-
 -------------------
-- http request smuggler
-Right click on a request and click 'Launch Smuggle probe', then watch the extension's output pane.
-- param miner
-Right click on a request in Burp and click "Guess (cookies|headers|params)". If you're using Burp Suite Pro, identified parameters will be reported as scanner issues. If not, you can find them listed under Extender->Extensions->Param Miner->Output
-You can also launch guessing attacks on multiple selected requests at the same time - this will use a thread pool so you can safely use it on thousands of requests if you want. Alternatively, you can enable auto-mining of all in scope traffic. Please note that this tool is designed to be highly scalable but may require tuning to avoid performance issues.
-- autorize
-It is sufficient to give to the extension the cookies of a low privileged user and navigate the website with a high privileged user. The extension automatically repeats every request with the session of the low privileged user and detects authorization vulnerabilities.
-It is also possible to repeat every request without any cookies in order to detect authentication vulnerabilities in addition to authorization ones.
-- autorepeater
-This extension automatically repeats requests, with replacement rules and response diffing. It provides a general-purpose solution for streamlining authorization testing within web applications.
-- active scan++
-To invoke these checks, just run a normal active scan.
-The host header checks tamper with the host header, which may result in requests being routed to different applications on the same host. Exercise caution when running this scanner against applications in a shared hosting environment.
-- auth analyzer
-The Burp extension helps you to find authorization bugs. Just navigate through the web application with a high privileged user and let the Auth Analyzer repeat your requests for any defined non-privileged user. With the possibility to define Parameters the Auth Analyzer is able to extract and replace parameter values automatically. With this for instance, CSRF tokens or even whole session characteristics can be auto extracted from responses and replaced in further requests. Each response will be analyzed and tagged on its bypass status.
-Authorization Tests can be performed in a semi automated way if you have the resources you want to test in your sitemap. In the very first step define your sessions you want to test. Then just expand your sitemap, select the resources and repeat the requests through the context menu. Additionally you can define some options which requests should be repeated and which not. With this you can perform authorization tests of a complex website within seconds.
-- inql
+- HTTP Request Smuggler
+Detects HTTP desync / request smuggling vulnerabilities by probing how front-end and back-end servers parse requests differently.
+- Param Miner
+Discovers hidden parameters in headers, cookies, and request bodies using wordlists and smart guessing techniques.
+- Autorize
+Automatically tests authorization by replaying requests with a low-privileged (or no-auth) session to detect access control issues.
+- AutoRepeater
+Resends requests automatically with custom rules and highlights response differences for easier vuln detection.
+- Active Scan++
+Extends Burp’s active scanner with additional checks like host header injection, cache poisoning, and other advanced attack vectors.
+- Auth Analyzer
+Performs advanced authorization testing with dynamic token extraction/replacement (e.g., CSRF/session tokens) and response analysis.
+- Logger++
+Advanced logging tool for HTTP traffic with filtering, searching, tagging, and persistence beyond Burp’s default proxy history.
+- J2EEScan
+Scanner focused on Java/J2EE misconfigurations and common enterprise Java vulnerabilities.
+- inQL (GraphQL Scanner)
+Helps test GraphQL endpoints by mapping schemas, generating queries, and identifying common GraphQL vulnerabilities.
+- Turbo Intruder
+High-performance HTTP fuzzer designed for large-scale attacks like race conditions, brute force, and desync testing.
+- Agartha
+Provides payload generation, fuzzing utilities, and encoding/decoding helpers for manual web testing.
+Additional Scanner Checks
+Adds extra passive and active scanning rules to identify more edge-case vulnerabilities.
+- JWT Editor
+Tool for decoding, modifying, signing, and attacking JSON Web Tokens (JWT), including weak key and alg attacks.
+- JS Link Finder
+Extracts endpoints and hidden links from JavaScript files to improve recon and attack surface discovery.
 
 
 configure burpsuite:-
@@ -79,6 +92,7 @@ replace=&quot;&gt;&lt;&#105;&#102;&#114;&#97;&#109;&#101;&#32;&#115;&#114;&#99;&
 
 you go and browse the app normally , make sure to click every button you find ( while burp proxy is on ) , then you go to burp history section and do scope only select only request with parameter and go to the request one by one and inject your payload on these urls , there a high chance you will find a reflected XSS :
 
+---------------------------------------------------------------------------------------------------------------------------------------------------
 
 Subdomain enumeration:-
 -----------------------
@@ -106,6 +120,8 @@ SubOver -l subdomains.txt -t 100 -a -v -https -o subover			#copy the providers.j
 aquatone is good to verify qith visual sight of pages
 # verify: dig example.example.com CNAME >> take the CNAME and see if you can register it.
 
+---------------------------------------------------------------------------------------------------------------------------------------------------
+
 Alive subdomains:-
 ------------------
 sed -i '/^-/d' subdomains
@@ -118,9 +134,12 @@ cat subdomains | httpx -mc 301,302 -o httpx3xx
 cat subdomains | httpx -mc 502,503,500 -o httpx5xx
 cat domains | httprobe -c 50 -t 20000 | tee -a domains-proto
 
+---------------------------------------------------------------------------------------------------------------------------------------------------
+
 Collecting: #endpoints.txt parameters.txt jsfiles.txt from live hosts:-
------------------------------------------------------------------------
 node ~/dom.js httpx2xx
+
+---------------------------------------------------------------------------------------------------------------------------------------------------
 
 Hosts:-
 -------
@@ -142,6 +161,8 @@ nuclei -l hosts-alive -o nuclei-hosts-httpx -s low,medium,high,critical -rl 50
 cat hosts-alive | while read -r url; do echo "Results for $url" | tee -a ffuf-hosts0; ffuf -u "https://$url/FUZZ" -w ~/wordlists/mywordlist.txt -fs 0 -mc 200 -timeout 5 -ac -recursion | uniffuf | tee -a ffuf-hosts0; echo "--------------------------------------" | tee -a ffuf-hosts0; done
 awk '/^Results for / {url=$3; out=""; next} /^[[:space:]]*[-]+$/ {if(out!=""){sub(/\n$/,"",out); print url "\n" out} url=""; out=""; next} NF && url {ep=$1; gsub(/\x1B\[[0-9;]*[a-zA-Z]/,"",ep); gsub(/\r/,"",ep); if(ep ~ /^\//) out=out ep "\n"; else out=out "/" ep "\n"} END {if(out!=""){sub(/\n$/,"",out); print url "\n" out}}' ffuf-hosts0 | awk '{gsub(/^[ \t]+|[ \t]+$/,""); if($0 ~ /^https?:\/\//){url_num=NR; last_url_num=url_num; url_map[url_num]=$0} else if(length($0)>0){print url_map[last_url_num] "/" $0}}' | sed 's#\([^:]\)/\+#\1/#g' > ffuf-hosts
 
+---------------------------------------------------------------------------------------------------------------------------------------------------
+
 Port scanning:-
 ---------------
 cat httpx-noproto | naabu -p 21,22,23,25,53,67,68,69,80,110,123,135,137,139,143,161,162,179,389,443,445,465,500,587,873,993,995,1194,1433,1812,1813,2049,3000,3128,3306,3389,4500,5000,5060,5061,5432,5672,5900,5985,5986,6379,8000,8008,8080,8081,8443,8888,9000,9080,9200,9300,10000,11211,27017 -o naabu
@@ -156,6 +177,8 @@ nmap -p <openport> -sV url/ip
 nmap example.com -p21 --script=ftp*
 -pn bypass firewall 	-f fragment to bypass firewall -sS 2 handshakes only -D 10.10.10.10 decoy
 --script=<scriptname> or --script=ssh* or --script=vuln or dos or exploit or brute
+
+---------------------------------------------------------------------------------------------------------------------------------------------------
 
 DNS enumeration:-
 -----------------
@@ -182,6 +205,7 @@ awk '/^Results for / {url=$3; out=""; next} /^[[:space:]]*[-]+$/ {if(out!=""){su
 Collecting: #endpoints.txt parameters.txt jsfiles.txt from live hosts:-
 -----------------------------------------------------------------------
 node ~/dom.js httpx2xx-ips #wait to finish
+
 while IFS= read -r domain; do curl -sG "https://web.archive.org/cdx/search/cdx" --data-urlencode "url=${domain}/*" --data-urlencode "collapse=urlkey" --data-urlencode "output=text" --data-urlencode "fl=original" | uro | anew | tee -a urls-wayback-ips; done < httpx-noproto-ips
 katana -list httpx-ips -o urls-katana-ips -jc -dr -em 7z,7zip,accdb,backup,bak,cache,class,cfg,conf,config,css,crt,csv,csr,db,db3,dbf,doc,docx,ear,js,env,gitignore,dmg,gz,ini,jar,java,json,key,log,md,md5,mdb,pdf,pem,pl,plist,pptx,p12,rpm,py,properties,rar,exe,secret,dll,sh,sql,sqlcipher,sqlitedb,sqlite3,action,adr,ascx,asmx,axd,bkf,iso,bkp,asc,pub,msi,bok,achee,cfm,cnf,lst,mai,mbox,mbx,nsf,ora,pac,passwd,pcf,pgp,rdp,reg,rtf,skr,tpl,url,deb,wml,bat,xsd,tar,bin,tar.gz,tgz,txt,war,xls,xlsx,xml,xz,yaml,yml,swp,tmp,htm,img,zip,lock,aspx,asp,html,inc,php,old,jsp,cgi,jku,jwk,jks,jwt
 cat httpx-ips | hakrawler | tee -a urls-hakrawler-ips
@@ -230,6 +254,8 @@ nuclei -l httpx-ips -tags swagger -rl 50 | tee -a nuclei-swagger-ips
 nuclei -l parameterizedUrls-ips -dast -o nuclei-dast-ips -s low,medium,high,critical -rl 50
 nuclei -l httpx-ips -o nuclei-httpx-ips -s low,medium,high,critical -rl 50
 
+---------------------------------------------------------------------------------------------------------------------------------------------------
+
 Files and directories:-
 -----------------------
 cat httpx | while read -r url; do echo "Results for $url" | tee -a ffuf0; ffuf -u "$url/FUZZ" -w ~/wordlists/mywordlist.txt -fs 0 -mc 200 -timeout 5 -ac -recursion | uniffuf | tee -a ffuf0; echo "--------------------------------------" | tee -a ffuf0; done
@@ -248,6 +274,8 @@ while read -r domain; do while read -r ep; do url="https://$domain$ep"; echo "$u
 
 #for ffuf and dirsearch:-
 -e .7z,.7zip,.accdb,.backup,.bak,.cache,.class,.cfg,.conf,.config,.css,.crt,.csv,.csr,.db,.db3,.dbf,.doc,.docx,.ear,.js,.env,.gitignore,.dmg,.gz,.ini,.jar,.java,.json,.key,.log,.md,.md5,.mdb,.pdf,.pem,.pl,.plist,.pptx,.p12,.rpm,.py,.properties,.rar,.exe,.secret,.dll,.sh,.sql,.sqlcipher,.sqlitedb,.sqlite3,.action,.adr,.ascx,.asmx,.axd,.bkf,.iso,.bkp,.asc,.pub,.msi,.bok,.achee,.cfm,.cnf,.lst,.mai,.mbox,.mbx,.nsf,.ora,.pac,.passwd,.pcf,.pgp,.rdp,.reg,.rtf,.skr,.tpl,.url,.deb,.wml,.bat,.xsd,.tar,.bin,.tar.gz,.tgz,.txt,.war,.xls,.xlsx,.xml,.xz,.yaml,.yml,.swp,.tmp,.htm,.img,.lock,.aspx,.asp,.html,.inc,.php,.old,.jsp,.cgi,.jku,.jwk,.jks,.jwt
+
+---------------------------------------------------------------------------------------------------------------------------------------------------
 
 Url gathering:-
 ---------------
@@ -309,6 +337,8 @@ awk '/^Results for / {url=$3; out=""; next} /^[[:space:]]*[-]+$/ {if(out!=""){su
 #.js.map
 mkdir jsmap && cd jsmap && while read -r url; do name=$(basename "$url" .js.map); sourcemapper -output "$name" -url "$url"; done < ../extensions/js.map-alive
 while read -r url; do name=$(basename "$url" .js); sourcemapper -output "$name" -jsurl "$url"; done < ../extensions/js-alive; cd ..
+
+---------------------------------------------------------------------------------------------------------------------------------------------------
 
 new:-
 -----
@@ -478,7 +508,7 @@ exiftool <file>
 
 >> upload a pic and then see if it still has info like geo location as this should be deleted once uploaded 
 
-AWS buckets:-
+AWS_buckets:-
 -------------
 #If you find an ACCESS_KEY and SECRET_KEY in js test them with:
 python3 tools/enumerate-iam-master/enumerate-iam.py
@@ -629,15 +659,16 @@ gsutil ls
 # Returned: gs://target-prod-logs/
 gsutil cp gs://target-prod-logs/internal-access.log .
 
-File Name Vulnerability:
+File_Name_Vulnerability:-
 ------------------------
-Path Traversals: ../../../tmp/lol.png
-SQL Injection: sleep(10) — -.jpg
-XSS: <svg onload=alert(document.comain)>.jpg/png
-Command Injection: ; sleep 10;.jpg
-DOS: Rename your file to a long string and upload, It may cause DOS.
+Path Traversals >> ../../../tmp/lol.png
+SQL >> Injection: sleep(10) — -.jpg
+XSS >> <svg onload=alert(document.comain)>.jpg/png
+Command Injection >> ; sleep 10;.jpg
+DOS >> Rename your file to a long string and upload, It may cause DOS.
 
 Tips:-
+------
 -- check icons on the website like socials >> if one doesn't work, report it
 -- sourcecode review
 -- if a page doesn't have captcha, the hacker could send endless requests
@@ -695,22 +726,10 @@ Tips:-
 	12- enable 2fa without email verification lead to pre-account takeover
 	13- enabling 2fa does not end another sessions		>	change password 
 -- exploit .git 	GitHacker tool - gitgrabber
--- burp extensions:
-	logger++
-	j2ees
-	autorize
-	autorepeater
-	inQL - graphQL scanner
-	turbo intruder
-	agartha
-	additional scanner checks
 -- dns rebinding: https://lock.cmpxchg8b.com/rebinder.html
---CSP bypass search: https://cspbypass.com/
+-- CSP bypass search: https://cspbypass.com/
 
-
-
-
-find subdomains from the cloud providers:
+## find subdomains from the cloud providers:
 -----------------------------------------
 # I have downloaded all of them in: ip-ranges
 cat ip-ranges | grep -oP ‘[a-z0–9]+\.[a-z]+\.[a-z]+’ | grep yourtarget | sort -u
