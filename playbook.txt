@@ -1,0 +1,804 @@
+# Bug Bounty Vulnerability Checklist
+
+----------------------------------------------------------------
+
+## 1. OAuth Vulnerabilities
+
+### Redirect URI & Flow Manipulation
+- [ ] Open redirect in OAuth chain (redirect_uri loosely validated)
+- [ ] Path-based injection (/callback?next= abuse)
+- [ ] Subdomain takeover chaining with OAuth redirect
+- [ ] Redirect URI parameter pollution (multiple redirect params accepted)
+- [ ] Double redirect leak (provider vs app-level redirect confusion)
+- [ ] Case sensitivity bypass in redirect_uri
+- [ ] Trailing slash normalization bypass
+- [ ] URL encoding tricks on redirect_uri
+- [ ] Wildcard *.domain.com abuse in redirect_uri
+
+### State Parameter Attacks
+- [ ] Missing or predictable state parameter
+- [ ] State not bound to session
+- [ ] Reused state tokens
+- [ ] Missing server-side state validation
+- [ ] State leakage via URL logs / referrers
+- [ ] State exposed via analytics scripts
+
+### PKCE Implementation Failures
+- [ ] PKCE missing in public clients (mobile, SPA, native)
+- [ ] code_verifier reused as state
+- [ ] Verifier exposed in redirect URL
+- [ ] Mismatch between challenge method (plain vs S256)
+- [ ] PKCE not enforced server-side
+- [ ] PKCE secret leaks via redirect
+
+### Authorization Code Leakage
+- [ ] Code in URL leaks (browser history, referrer headers, logs, analytics)
+- [ ] Code interception via malicious extensions
+- [ ] Code interception via XSS on callback page
+- [ ] Code interception via proxy manipulation
+
+### Flow Confusion Attacks
+- [ ] Mix-up attacks (swapping identity providers)
+- [ ] Confusing token audience
+- [ ] Accepting token from wrong issuer
+- [ ] Login vs connect confusion (same callback for login + account linking)
+
+### Token Storage & Exposure
+- [ ] Token in localStorage (XSS-prone)
+- [ ] Token in URL fragments (#access_token)
+- [ ] Insecure cookies (no HttpOnly/SameSite)
+- [ ] Referer header token leaks
+- [ ] Third-party script token leakage
+
+### Scope & Consent Abuse
+- [ ] Scope injection / escalation (modify scope parameter)
+- [ ] Backend fails to validate requested scopes
+- [ ] Over-permissioned OAuth apps (read profile also grants email, API, offline)
+
+### Device Code / Social Engineering
+- [ ] Device code phishing (attacker provides device code, victim enters on legit domain)
+
+### Chainable Patterns
+- [ ] OAuth + Open Redirect → code leak → token exchange → ATO
+- [ ] OAuth + XSS on redirect page → steal code/state → impersonation
+- [ ] OAuth + subdomain takeover → redirect_uri → full token capture
+- [ ] OAuth + CORS misconfig → token exfiltration
+
+----------------------------------------------------------------
+
+## 2. 2FA / MFA Bypass
+
+### Broken Gating / Logic Flaws
+- [ ] 2FA not enforced after login (session marked authenticated without MFA)
+- [ ] Direct access to /dashboard works without completing 2FA
+- [ ] Only frontend checks `is2FA=true`
+- [ ] API endpoints ignore 2FA state
+- [ ] Backend trusts client flag (`"2fa_verified": false` → flip to true)
+- [ ] No OTP validation server-side
+- [ ] 2FA is cosmetic only
+
+### OTP Verification Flaws
+- [ ] No session binding (OTP sent to A, reused in B's session)
+- [ ] Missing rate limiting on OTP
+- [ ] OTP not tied to specific action (login, password reset, email change all use same)
+- [ ] OTP reuse / replay (same code works multiple times)
+- [ ] OTP brute force (4-6 digit codes)
+- [ ] OTP sent to old email during email change
+- [ ] OTP bypass via JSON array
+- [ ] Null/empty OTP accepted
+- [ ] Old OTP still valid
+
+### Response/Status Code Manipulation
+- [ ] Change 400 → 200 in response
+- [ ] Modify "message":"Invalid OTP" → "OTP verified successfully"
+- [ ] Change status codes (302 → 200)
+- [ ] Modify JSON body (add "type":3 to bypass)
+- [ ] Change boolean `false` → `true`
+- [ ] Remove 2FA parameter entirely from request
+
+### Password Reset Bypass
+- [ ] Password reset flow skips 2FA
+- [ ] Reset password → login without MFA prompt
+- [ ] 2FA auto-disabled after password reset
+
+### OAuth / SSO Bypass
+- [ ] OAuth login (Google/GitHub) skips local 2FA entirely
+- [ ] Inconsistent policy enforcement across auth paths
+- [ ] OpenID misconfiguration to bypass 2FA
+
+### Session-Based Bypass
+- [ ] 2FA bypass using poor session management
+- [ ] Pre-2FA session cookie still valid
+- [ ] Cookie leaked before completing 2FA
+- [ ] Activation/verification link used to login instead of OTP
+- [ ] First login phase cookie replaces 2FA-issued cookie
+- [ ] Session permission confusion (complete 2FA on your account, access victim's flow)
+
+### "Remember Device" / Trusted Device
+- [ ] `trusted_device=true` with no cryptographic binding
+- [ ] Cookie reuse across sessions
+- [ ] Token theft → permanent bypass
+
+### Backup Code Weaknesses
+- [ ] Predictable / sequential backup codes
+- [ ] No one-time invalidation
+- [ ] Stored in plaintext or weak hash
+- [ ] Backup codes generated immediately after 2FA enabled, available on single request
+
+### Race Conditions
+- [ ] Parallel OTP validation requests accepted
+- [ ] OTP validated multiple times before invalidation
+
+### API / Endpoint Bypass
+- [ ] Older API versions (/v1/, /v2/, /v3/) don't enforce 2FA
+- [ ] Mobile app endpoints bypass 2FA
+- [ ] Direct API calls after password step skip OTP
+
+### Other 2FA Bypass Vectors
+- [ ] 2FA disabled without re-authentication
+- [ ] Enabling 2FA doesn't expire previous sessions
+- [ ] Login via activation link bypasses 2FA
+- [ ] Subdomain login bypasses 2FA (same creds, no OTP prompt)
+- [ ] Referer header manipulation to bypass
+- [ ] Remove "/code" from API endpoint in reset flow
+- [ ] Change request method to bypass
+- [ ] Brute-force OTP with ffuf
+- [ ] Backup code generation for victim account
+- [ ] Clickjacking/CSRF to disable 2FA
+- [ ] 2FA page discloses sensitive info (phone number)
+
+----------------------------------------------------------------
+
+## 3. Password Reset Vulnerabilities
+
+### Token Leakage
+- [ ] Reset token exposed via Referer headers (clicking external links)
+- [ ] Token in browser history
+- [ ] Token in proxy/CDN logs
+- [ ] Token captured by analytics tools
+- [ ] Email clients previewing URLs leak token
+- [ ] Token in response/JS files
+- [ ] Token leaked via social media icons on reset page
+
+### Weak / Predictable Tokens
+- [ ] Short tokens (6-10 chars)
+- [ ] Numeric-only reset codes
+- [ ] Non-cryptographic randomness
+- [ ] Timestamp-based tokens
+- [ ] Brute-force tokens
+- [ ] Guess tokens based on pattern
+- [ ] Replay previous tokens
+
+### Token Binding & Reuse
+- [ ] Token not tied to account ID
+- [ ] Token not tied to device/session
+- [ ] Token reusable across users
+- [ ] Token not invalidated after use (same link works multiple times)
+- [ ] Session remains valid after password reset
+- [ ] Old reset link works after password already changed
+
+### Expiration Issues
+- [ ] Long-lived reset tokens (valid for hours/days/weeks)
+- [ ] No revocation after new reset request
+- [ ] Token still works after password change
+- [ ] Token still works after logging in with original password
+- [ ] Reset link not expired after changing email address
+- [ ] Reset link not expired after being used before
+- [ ] Reset link not expired after sending another one
+
+### User Enumeration
+- [ ] "email sent" vs "user not found" responses differ
+- [ ] Timing differences reveal valid accounts
+- [ ] HTTP status code variations
+
+### Host Header / URL Poisoning
+- [ ] Reset link generated using attacker-controlled Host header
+- [ ] X-Forwarded-Host injection
+- [ ] CRLF injection in reset URL
+- [ ] Password reset poisoning via dangling markup
+
+### IDOR in Reset Flow
+- [ ] Change `user_id` in reset request
+- [ ] Modify email parameter to victim's email
+- [ ] Use attacker's token on victim's email
+- [ ] Reset OTP leaked in Burp response
+
+### Race Conditions
+- [ ] Multiple resets in parallel (one token not invalidated properly)
+- [ ] Reuse stale token after password change
+
+### OTP-Based Reset Flaws
+- [ ] No rate limiting on reset OTP
+- [ ] Brute-force 4-6 digit codes
+- [ ] OTP not tied to session
+- [ ] OTP reuse allowed
+
+### CSRF / Forced Reset
+- [ ] Password reset CSRF (attacker forces reset on victim)
+
+### HTTP Parameter Pollution
+- [ ] `email=victim@mail.com&email=attacker@mail.com`
+- [ ] `email[]=victim@mail.com&email[]=attacker@mail.com`
+- [ ] `email=victim@mail.com%20email=attacker@mail.com`
+- [ ] `email=victim@mail.com,attacker@mail.com`
+- [ ] `{"email":["victim@mail.com","attacker@mail.com"]}`
+- [ ] BCC injection via newline
+
+### Other Reset Vectors
+- [ ] Weak password policy (space-only password)
+- [ ] SQLi in email field
+- [ ] XSS/SSTI in email field
+- [ ] Command injection in email
+- [ ] XXE if reset accepts XML
+- [ ] Missing rate limit on email triggering
+- [ ] Change request method and content-type
+- [ ] Append null bytes after email
+- [ ] Application-level DoS (very long password)
+- [ ] Register with whitespace-padded username, use token to reset victim's account
+- [ ] Token leakage in server logs / debug endpoints / API responses / error messages
+- [ ] No secondary verification before reset (no 2FA/email confirm/device check)
+- [ ] Inconsistent enforcement across auth paths
+- [ ] Cross-account reset confusion (token for A accepted in B's session)
+
+----------------------------------------------------------------
+
+## 4. Account Takeover (ATO)
+
+### Credential-Based
+- [ ] Password reuse / credential stuffing
+- [ ] No rate limiting on login
+- [ ] Weak password policies
+- [ ] No MFA enforcement for sensitive accounts
+- [ ] Brute-force password
+
+### Authentication Logic Flaws
+- [ ] Broken login state management (frontend says logged in, backend no validate)
+- [ ] Session fixation
+- [ ] Session not invalidated after password change
+- [ ] Logout does not clear all tokens
+
+### Password Reset → ATO
+- [ ] Token leakage (referrer, logs, email preview)
+- [ ] IDOR in reset flow (change user_id)
+- [ ] Weak reset tokens (guessable/reusable/long-lived)
+- [ ] Reset password using attacker's token on victim's email
+- [ ] ATO via reset password HPP
+- [ ] ATO via reset password race condition (same token for two accounts)
+- [ ] ATO via reset poisoning (X-Forwarded-Host)
+- [ ] ATO via removing `frm_check` parameter
+- [ ] ATO via changing email in local storage
+- [ ] ATO via intercepting OTP submission and changing email to victim
+
+### MFA/2FA Bypass → ATO
+- [ ] MFA not enforced everywhere
+- [ ] "Remember device" cookie abuse
+- [ ] OTP brute force / replay / missing session binding
+- [ ] OTP bypass via modifying "type" from "login" to "register"
+- [ ] 2FA bypass via password reset
+
+### OAuth/SSO → ATO
+- [ ] Redirect URI manipulation
+- [ ] Account linking abuse
+- [ ] Mix-up attacks
+- [ ] OAuth login with email field manipulation
+- [ ] Pre-ATO via OAuth (create account with victim email, OAuth signs into victim's account)
+
+### IDOR → ATO
+- [ ] Change user_id, account_id, profile_id
+- [ ] Reset password for another user
+- [ ] Change email address of another user
+- [ ] Change recovery options
+- [ ] ATO via IDOR in email update
+- [ ] ATO via IDOR in password reset
+
+### Email / Recovery Channel Takeover
+- [ ] Email change without verification
+- [ ] Weak email verification flows (no re-auth)
+- [ ] Email takeover → password reset → full ATO
+
+### Session & Token Abuse
+- [ ] XSS → session token theft
+- [ ] localStorage token leakage
+- [ ] Insecure cookies
+- [ ] JWT missing signature validation
+- [ ] JWT missing MFA claims
+- [ ] Long-lived tokens
+- [ ] Refresh token abuse (no rotation, replay allowed)
+- [ ] Session still valid after logout (broken cache via Alt+Left)
+
+### Business Logic ATO
+- [ ] Account linking confusion
+- [ ] Privilege boundary failures (normal user affecting admin)
+- [ ] Multi-step flow skipping
+- [ ] 0-Click ATO
+- [ ] ATO via non-breaking space in email (identity confusion)
+- [ ] ATO via tagline on different domain
+- [ ] ATO via HTMLi in newsletter fields
+- [ ] ATO via personal/business account confusion
+
+### API & Backend ATO
+- [ ] Frontend protected, backend not
+- [ ] Missing auth on internal endpoints
+- [ ] CORS misconfiguration → token leakage
+- [ ] Mobile API endpoints exposed
+
+### Race Conditions
+- [ ] Password change races
+- [ ] OTP validation races
+- [ ] Session invalidation delay
+
+### Response Manipulation ATO
+- [ ] ATO via changing response status codes (create account with existing email)
+- [ ] ATO via pasting old success response
+- [ ] ATO via changing email in response body
+- [ ] ATO via OTP response altering (add "type":3)
+- [ ] ATO via changing response message
+
+### Pre-ATO
+- [ ] Create account with victim email, try OAuth login → signs into victim account
+- [ ] Create account, don't verify, enable 2FA → possible pre-ATO
+- [ ] Create account, don't verify, connect Google/Facebook → pre-ATO
+
+### CSRF-Based ATO
+- [ ] Email update vulnerable to CSRF
+- [ ] Password change vulnerable to CSRF
+- [ ] ATO via reset password + CSRF (remove old password field)
+
+### Other ATO Vectors
+- [ ] SQL injection to bypass auth
+- [ ] JWT misconfigurations
+- [ ] Change email to already registered email (various bypasses)
+- [ ] ATO via OAuth + no email sharing (turn off share email, enter victim email)
+- [ ] No rate limit on invitation bypass
+- [ ] SSRF in host header
+- [ ] BXSS (Blind XSS)
+
+----------------------------------------------------------------
+
+## 5. IDOR (Insecure Direct Object Reference)
+
+### Basic Object Manipulation
+- [ ] Change `user_id`, `account_id`, `order_id` in requests
+- [ ] Change `/api/profile/123` to `/api/profile/124`
+- [ ] Test all HTTP methods (GET, POST, PUT, PATCH, DELETE)
+
+### Read-Based IDOR
+- [ ] Access other users' personal info
+- [ ] Access invoices, orders, chat messages
+- [ ] Access private files, documents
+- [ ] Enumerate sequential IDs for mass data extraction
+
+### Write-Based IDOR
+- [ ] Change email of another user
+- [ ] Update password/settings of another user
+- [ ] Modify billing details of another user
+
+### Horizontal vs Vertical
+- [ ] Horizontal: same role, different account
+- [ ] Vertical: normal user → admin data/actions
+
+### UUID / "Unguessable" ID Issues
+- [ ] UUIDs leaked in responses
+- [ ] Enumeration via API lists
+- [ ] Predictable sequential fallback IDs exist alongside UUIDs
+
+### File / Media IDOR
+- [ ] Access private uploads via sequential IDs
+- [ ] Download other users' files, images, invoices
+
+### IDOR Bypass Techniques
+- [ ] Add `%20`, `%09`, `%0b`, `%0c`, `%1c`, `%1d`, `%1e`, `/` to ID
+- [ ] Try older API versions: `/api/v5/9` → `/api/v1/9`
+- [ ] Wrap ID with array: `{"id":[1,2,3]}`
+- [ ] Wrap ID with JSON object
+- [ ] JSON parameter pollution
+- [ ] Change ID case
+- [ ] Path traversal in ID
+- [ ] Change words (e.g., `/user/1` → `/users/1`)
+- [ ] Add extension: `/users/01` → `/users/02.json`
+- [ ] Try parameter pollution: `users=01&users=02`
+- [ ] Use wildcards: `/users/01*` or `/users/*`
+- [ ] Check Referer header used for validation
+- [ ] Swap GUID with numeric ID or email
+- [ ] Try GUIDs: `00000000-0000-0000-0000-000000000000`
+- [ ] Use `X-Original-URL` / `X-Forwarded-For` headers
+- [ ] Add `/details` or similar to the endpoint
+- [ ] Try base64 encoded IDs
+
+### GraphQL IDOR
+- [ ] Nested object access abuse
+- [ ] Change user ID in nested queries
+- [ ] Deep object traversal for mass exposure
+
+### JWT / Claims IDOR
+- [ ] Backend accepts modified request param despite JWT having user_id
+
+### Multi-Step / Business Logic IDOR
+- [ ] View order → modify shipping → intercept delivery
+- [ ] Change email → password reset → ATO
+- [ ] Modify shared resource (group, team, org) → persistent impact
+
+### Second-Order IDOR
+- [ ] IDOR that triggers via export files, emails, or message alerts
+
+### Blind IDOR
+- [ ] Information disclosed via export files, emails, notifications
+
+### IDOR in Password Reset / Email Flows
+- [ ] Change another user's email
+- [ ] Trigger password reset for victim
+
+### Race Condition + IDOR
+- [ ] Parallel updates on same object inconsistent
+
+### Testing Workflow
+- [ ] Use Comparer to compare identical requests from two accounts
+- [ ] Use Match & Replace to automate ID swapping
+- [ ] Try 403/401 bypass via Intruder (50-100 requests with different IDs)
+- [ ] Check if 403/401 is thrown but action is still performed
+- [ ] Look for encrypted IDs, try to decrypt
+- [ ] GUID enumeration via Google Dorks, GitHub, Wayback, Burp history
+- [ ] SignUp, Reset Password endpoints often disclose GUIDs
+
+----------------------------------------------------------------
+
+## 6. Session Management
+
+### Session Fixation
+- [ ] Session ID not regenerated after login
+- [ ] Predictable/pre-set session identifiers
+- [ ] Attacker sets session before victim logs in
+- [ ] Old session cookies still valid after logout
+
+### Session Hijacking
+- [ ] XSS stealing cookies/localStorage
+- [ ] Token leakage via logs, extensions, Referer
+- [ ] Session token in query params
+- [ ] Session token in fragments
+- [ ] Session token in redirect URLs
+
+### Session Invalidation Failures
+- [ ] Session not invalidated after logout (client-side only removal)
+- [ ] Session not revoked after password change
+- [ ] Session still valid after 2FA enabled
+- [ ] Session still valid after logout (browser back button) — broken cache
+- [ ] Session still valid after logout (two tabs, one logs out, other still functional)
+
+### Predictable Session IDs
+- [ ] Sequential IDs
+- [ ] Timestamp-based tokens
+- [ ] Encoded user IDs (base64, hex)
+- [ ] Brute-force valid sessions
+
+### Missing Session Rotation
+- [ ] Session identical across privilege changes
+- [ ] No rotation after login
+- [ ] No rotation after MFA completion
+- [ ] No rotation after password reset
+
+### Insecure Cookie Attributes
+- [ ] Missing HttpOnly (JS can steal cookies)
+- [ ] Missing Secure (cookies sent over HTTP)
+- [ ] Missing SameSite (CSRF/session abuse)
+
+### JWT Session Flaws
+- [ ] No token expiration
+- [ ] Weak signature validation (`alg: none`)
+- [ ] RS256 ↔ HS256 confusion
+- [ ] Missing audience/issuer validation
+- [ ] JWT stored in localStorage
+- [ ] Weak JWT secret (brute force)
+- [ ] Missing claim validation (exp, aud, iss)
+- [ ] JWT decoded → change user to admin → re-encoded
+
+### Refresh Token Abuse
+- [ ] Refresh tokens never rotate
+- [ ] Multiple refreshes allowed simultaneously (replay)
+- [ ] Refresh tokens not revoked after logout
+
+### Cross-Device Session Confusion
+- [ ] Mobile + web session overlap
+- [ ] Logout on mobile doesn't revoke browser token
+
+### Multi-Step Auth Session Bugs
+- [ ] Partial auth sessions treated as full auth
+- [ ] Pre-MFA session grants API access
+
+### Session Binding Failures
+- [ ] Session not tied to IP
+- [ ] Session not tied to device/browser fingerprint
+- [ ] Session not tied to MFA state
+
+### Privilege Escalation via Session
+- [ ] Role cached client-side
+- [ ] Stale admin session persists after role downgrade
+
+### CORS + Session Abuse
+- [ ] `Access-Control-Allow-Credentials: true` with weak origin validation
+- [ ] Authenticated responses readable cross-origin
+
+### Multi-Tenant Session Confusion
+- [ ] Session valid across organizations
+- [ ] Account switching flaws
+
+### Race Conditions
+- [ ] Logout race (session survives invalidation)
+- [ ] MFA race
+- [ ] Simultaneous refresh requests
+
+### Testing Session Tokens
+- [ ] Try base64 decode on session token → modify → re-encode
+- [ ] Try ASCII hex decode: `echo "hexstring" | xxd -r -p`
+- [ ] Encode: `echo -n "user=adminrole=admin" | xxd -p`
+- [ ] Change small portion of session token between requests
+- [ ] Check if multiple sessions allowed
+- [ ] Check for never-ending cookie length
+
+----------------------------------------------------------------
+
+## 7. Authentication Bypass
+
+### Missing Authentication Checks
+- [ ] Endpoint accessible without auth (direct API access)
+- [ ] `/admin`, `/api/admin/users`, `/api/profile` unprotected
+
+### Frontend-Only Authentication
+- [ ] JS/UI enforces auth but APIs remain accessible
+- [ ] Common in SPA, mobile backends, GraphQL APIs
+
+### Multi-Step Flow Skipping
+- [ ] Skip OTP/MFA step, directly access authenticated endpoint
+- [ ] Partial auth state treated as full auth
+
+### MFA/2FA Bypass
+- [ ] API ignores MFA state
+- [ ] Session created pre-MFA
+- [ ] Alternate auth flow skips OTP
+
+### OAuth/SSO Bypass
+- [ ] Wrong issuer accepted
+- [ ] Unsigned JWT accepted
+- [ ] Redirect URI abuse
+- [ ] Account linking confusion
+- [ ] Login vs account-linking flow mismatch
+
+### JWT Bypass
+- [ ] `alg: none`
+- [ ] RS256 ↔ HS256 signature confusion
+- [ ] Weak JWT secret brute force
+- [ ] Missing claim validation (exp, aud, iss)
+
+### Session-Based Bypass
+- [ ] Reusing stale sessions
+- [ ] Session fixation
+
+### Header-Based Bypass
+- [ ] `X-Forwarded-For`
+- [ ] `X-Original-URL`
+- [ ] `X-Rewrite-URL`
+- [ ] `X-User` / `X-Remote-User`
+- [ ] `X-Forwarded-Host`
+- [ ] `X-Originating-IP`
+- [ ] `X-Remote-IP`
+- [ ] `X-Remote-Addr`
+- [ ] `X-Client-IP`
+- [ ] `X-Host`
+
+### Reverse Proxy / CDN Misconfig
+- [ ] Backend directly accessible
+- [ ] Path normalization mismatch (`/admin/..`, `/%2e/admin`, `//admin`)
+- [ ] Alternate routes skip auth
+
+### Path Traversal → Auth Bypass
+- [ ] `/public/../admin`
+- [ ] Routing/auth middleware disagree on normalized path
+
+### HTTP Method Confusion
+- [ ] `GET /admin` blocked, `POST /admin` allowed
+- [ ] `HEAD /admin` leaks data
+
+### Cache-Based Bypass
+- [ ] Authenticated responses cached publicly
+- [ ] Missing `Cache-Control`
+- [ ] CDN key confusion
+- [ ] User-specific content cached globally
+
+### Role/Privilege Confusion
+- [ ] User treated as admin
+- [ ] Stale role token
+- [ ] Client-side role fields trusted
+
+### Mobile API Bypass
+- [ ] Mobile-only endpoints lack auth
+- [ ] APIs easily replayed via Burp/Frida
+
+### Password Reset Auth Bypass
+- [ ] Valid reset token = full session
+- [ ] Recovery flow skips MFA
+
+### SSO Federation Trust Failures
+- [ ] Accepting arbitrary SAML assertions
+- [ ] Weak OpenID validation
+- [ ] Tenant confusion
+
+### Default/Hidden Auth Paths
+- [ ] `/debug/login`, `/test-auth`, `/internal-auth` still active
+
+### API Gateway / Microservice Bypass
+- [ ] Frontend gateway enforces auth, internal service trusts everything
+- [ ] Direct access to backend service
+
+### Response Manipulation Bypass
+- [ ] Intercept response, change 302 Found → 200 OK
+- [ ] Change Location header from index.php to admin.php
+- [ ] Change 400 → 200 on failed login
+- [ ] Change redirect location to correct one from normal workflow
+
+### Parameter Modification
+- [ ] Change `user_id` in admin endpoint
+- [ ] Add parameters, change methods
+
+### Session Token Attacks
+- [ ] Small session tokens → brute force
+- [ ] Base64 decode session → modify → re-encode
+- [ ] Hex decode session token
+- [ ] Include admin cookie in GET request
+
+### SQLi for Auth Bypass
+- [ ] `sqlmap -r req.txt` on password reset POST request
+
+### Password Reset Testing
+- [ ] Try to reset password to short value (2-3 digits)
+- [ ] Check if reset link never expires
+
+### Practical Chains
+- [ ] Partial session → MFA bypass
+- [ ] JWT confusion → admin auth
+- [ ] Reverse proxy mismatch → auth middleware bypass
+- [ ] OAuth validation flaw → accept attacker-controlled identity
+- [ ] Cache poisoning → retrieve another user's authenticated response
+- [ ] SSO federation → accept arbitrary assertion
+
+----------------------------------------------------------------
+
+## 8. OTP Bypass
+
+### Direct Bypass Methods
+- [ ] Enter null or empty OTP
+- [ ] Enter `0` or `000000` as OTP
+- [ ] Enter old/expired OTP
+- [ ] Brute-force OTP
+- [ ] Response manipulation (change "Invalid" → "Verified")
+- [ ] Status code manipulation (400 → 200, 302 → 200)
+- [ ] Remove OTP parameter entirely
+- [ ] Change content-type and send as array
+- [ ] OTP via JSON array (send array of possible OTPs)
+- [ ] Intercept verify button via inspect element
+
+### Logic Flaws
+- [ ] OTP not tied to session
+- [ ] OTP not invalidated after use (replay)
+- [ ] Same OTP used for login, password reset, email change
+- [ ] No rate limiting on OTP validation
+- [ ] OTP sent to old email (not new one)
+- [ ] OTP leaked in response/JS files
+- [ ] OTP reuse across accounts (swap OTPs between two accounts)
+
+### Advanced Bypass
+- [ ] Create account A, submit OTP request, copy body → create account B with victim details, use A's request body
+- [ ] Race condition: send OTP validation multiple times simultaneously
+- [ ] OTP bypass via adding "type":3 to response JSON
+- [ ] OTP bypass via changing `"type":"login"` to `"type":"register"`
+- [ ] OTP bypass via changing email in local storage
+
+----------------------------------------------------------------
+
+## 9. Email Verification Bypass
+
+### Direct Access
+- [ ] Unprotected account activation URLs (`/verify?user_id=1234`)
+- [ ] Predictable verification tokens (`/verify?token=abcd1234`)
+- [ ] Direct access to verified user area (/dashboard, /profile)
+
+### Response Manipulation
+- [ ] Change `"is_verified": false` → `"is_verified": true`
+- [ ] Modify status codes (401 → 302)
+
+### Email Update Confusion
+- [ ] Create account with email A (victim) → update to email B (attacker) → verify B → update back to A → A is now verified
+- [ ] Create account with victim email → update to attacker email → click verification link → victim email now verified
+- [ ] Create with A, change to B (don't verify B), change to C, click B's link → check if C is verified
+
+### Race Condition
+- [ ] Intercept email change request → send twice (victim email + attacker email simultaneously) → check if victim email marked verified
+
+### Other
+- [ ] Verification link sent over HTTP
+- [ ] Register with company domain email → intercept 401 → change to 302
+- [ ] Add `%20` to end of email to bypass "email already exists" check
+- [ ] Sign up with fake email of company's domain to bypass verification
+- [ ] Verification link can be used multiple times
+
+----------------------------------------------------------------
+
+## 10. Captcha Bypass
+
+- [ ] Response manipulation
+- [ ] Use previously used captcha value
+- [ ] Use any token with same length (+1/-1)
+- [ ] Remove the param value or remove entire parameter
+- [ ] Change method from POST to GET (or PUT) and remove captcha
+- [ ] Change body to JSON or vice-versa
+- [ ] Try OCR
+- [ ] Check if captcha value in source code (e.g., `2+2`)
+- [ ] Check if captcha value is in source code as hidden field
+- [ ] Reuse same captcha value with different session IDs
+- [ ] JSON body: combine array + captcha removal
+- [ ] Add internal IP headers (X-Forwarded-For, X-Originating-IP, etc.)
+
+----------------------------------------------------------------
+
+## 11. General Checks & Miscellaneous
+
+### Weak Registration
+- [ ] Verification link sent over HTTP
+- [ ] No confirmation required after account creation
+- [ ] Registration page harvesting
+
+### Privilege Escalation
+- [ ] Role/ID in request parameter
+- [ ] Match & Replace ("viewer" → "admin")
+- [ ] Modify role_id in JSON body
+- [ ] Match & Replace for privilege flags (set match=false, replace=true in Burp)
+
+### Business Logic
+- [ ] Modify item prices in request/response
+- [ ] Modify available credit, coupons
+- [ ] Intercept add to cart, modify price
+- [ ] Set quantity to -1 or 0.1
+- [ ] Account deletion/email change lacks password confirmation
+
+### Comment/Data Persistence
+- [ ] User still able to read comments after being kicked from account/workspace
+
+### Trusted Device
+- [ ] Remove `deviceAuth[answer]` from request body, leaving only `"deviceAuth[remember]":true`
+
+### Password Field
+- [ ] Check if password can be copied from masked input (******)
+
+### Lab Practice (PortSwigger)
+- [ ] Unprotected admin functionality (/robots.txt → /administrator-panel)
+- [ ] Unpredictable admin URL (JS discloses URL)
+- [ ] User role controlled by request parameter (Admin=false → true)
+- [ ] User role modified in user profile (add roleid:2)
+- [ ] User ID controlled by request parameter
+- [ ] User ID controlled by request parameter with data leakage in redirect
+- [ ] User ID controlled by request parameter with password disclosure
+- [ ] URL-based access control circumvented (X-Original-URL)
+- [ ] Method-based access control circumvented (POST → GET)
+- [ ] Multi-step process with no access control on one step
+- [ ] Referer-based access control
+
+### Abusing Support Portal
+- [ ] Create similar email and ask support to change email
+- [ ] Create account with @target.com email for higher privilege
+- [ ] Ticket Trick: email support+ticketID@company.com, check cross-account visibility
+- [ ] Create support ticket by email, view in portal (check SSO/email verification gaps)
+
+### General Checks
+- [ ] Check if reset pass OTP is leaked in Burp response
+- [ ] Check if you can sign up with fake email of company domain
+- [ ] Check if you can delete account without password confirmation
+- [ ] Check if confirmation link can be used multiple times
+- [ ] Check if password can be copied from masked field
+- [ ] Check if account deletion or email change lacks password confirmation
+- [ ] Check password length limits
+- [ ] In password reset, try sending request to 2 emails
+- [ ] In password reset, change domain responsible for sending email
+- [ ] In password reset page with token in URL, check social media icons for token leak
+- [ ] Add %20 to end of email to bypass "email already exists"
+- [ ] If no confirmation after creating account, try creating with admin email
+- [ ] Check if verification link is HTTP
+- [ ] Try to bypass OTP with null/empty entry
+- [ ] Log out and try to send account change request to see if it still works
